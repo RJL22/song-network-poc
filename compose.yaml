@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17
+
+    container_name: music-graph-db
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: music_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: music_graph
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
