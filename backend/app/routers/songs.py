@@ -6,7 +6,7 @@ from app.models import Song, Connection
 from app.database import get_db
 from app.schemas import SongCreate, SongResponse, SongUpdate, ConnectionResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/songs", tags=["songs"])
 
 @router.get("/", response_model=list[SongResponse])
 def get_songs(db: Session = Depends(get_db)):

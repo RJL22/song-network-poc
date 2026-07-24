@@ -24,3 +24,7 @@ class Song(Base):
         back_populates="song_2",
         foreign_keys="Connection.song_2_id",
     )
+
+    @property
+    def connections(self) -> list["Connection"]:
+        return self.connections_as_song_1 + self.connections_as_song_2
