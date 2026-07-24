@@ -8,19 +8,19 @@ from app.schemas import SongCreate, SongResponse, SongUpdate, ConnectionResponse
 
 router = APIRouter()
 
-@router.get("/songs", response_model=list[SongResponse])
+@router.get("/", response_model=list[SongResponse])
 def get_songs(db: Session = Depends(get_db)):
     songs = db.scalars(sqlalchemy.select(Song)).all()
     return songs
 
-@router.get("/songs/{song_id}", response_model=SongResponse)
+@router.get("/{song_id}", response_model=SongResponse)
 def get_song(song_id: int, db: Session = Depends(get_db)):
     song = db.scalar(sqlalchemy.select(Song).where(Song.id == song_id))
     if not song:
         raise HTTPException(status_code=404, detail="Song not found")
     return song
 
-@router.get("/songs/{song_id}/connections", response_model=list[ConnectionResponse])
+@router.get("/{song_id}/connections", response_model=list[ConnectionResponse])
 def get_song_connections(song_id: int, db: Session = Depends(get_db)):
     song = db.get(Song, song_id)
     if not song:
@@ -32,7 +32,7 @@ def get_song_connections(song_id: int, db: Session = Depends(get_db)):
     ).all()
     return connections
 
-@router.post("/songs", response_model=SongResponse)
+@router.post("/", response_model=SongResponse)
 def add_song(song: SongCreate, db: Session = Depends(get_db)):
     db_song = Song(title=song.title, artist=song.artist)
     db.add(db_song)
@@ -40,7 +40,7 @@ def add_song(song: SongCreate, db: Session = Depends(get_db)):
     db.refresh(db_song)
     return db_song
 
-@router.delete("/songs/{song_id}", response_model=None)
+@router.delete("/{song_id}", response_model=None)
 def delete_song(song_id: int, db: Session = Depends(get_db)):
     song = db.scalar(sqlalchemy.select(Song).where(Song.id == song_id))
     if not song:
@@ -50,7 +50,7 @@ def delete_song(song_id: int, db: Session = Depends(get_db)):
     # return {"message": f"Successfully deleted song {song_id}"}
     return Response(status_code=status.HTTP_204_NO_CONTENT) 
 
-@router.put("/songs/{song_id}", response_model=SongResponse)
+@router.put("/{song_id}", response_model=SongResponse)
 def update_song(song_id: int, song_update: SongUpdate, db: Session = Depends(get_db)):
     song = db.scalar(sqlalchemy.select(Song).where(Song.id == song_id))
     if not song:

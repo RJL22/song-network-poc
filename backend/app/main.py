@@ -17,6 +17,6 @@ def test():
     return {"message": "Hello World!"}
 
 # Adding the routers for songs and connections
-app.include_router(songs.router)
-app.include_router(connections.router)
+app.include_router(songs.router, prefix="/songs", tags=["songs"])
+app.include_router(connections.router, prefix="/connections", tags=["connections"])
 

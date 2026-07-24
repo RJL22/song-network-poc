@@ -7,12 +7,12 @@ from app.schemas import ConnectionCreate, ConnectionResponse
 
 router = APIRouter()
 
-@router.get("/connections", response_model=list[ConnectionResponse])
+@router.get("/", response_model=list[ConnectionResponse])
 def get_connections(db: Session = Depends(get_db)):
     connections = db.scalars(sqlalchemy.select(Connection)).all()
     return connections
 
-@router.post("/connections", response_model=ConnectionResponse)
+@router.post("/", response_model=ConnectionResponse)
 def add_connection(connection: ConnectionCreate, db: Session = Depends(get_db)):
     # Proper ordering of song IDs to avoid duplicates
     song_1_id = min(connection.song_1_id, connection.song_2_id)
