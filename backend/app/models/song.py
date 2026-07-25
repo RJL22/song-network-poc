@@ -12,6 +12,7 @@ class Song(Base):
     __tablename__ = "songs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    mb_id: Mapped[str] = mapped_column(unique=True, nullable=False)
     title: Mapped[str] = mapped_column(nullable=False)
     artist: Mapped[str] = mapped_column(nullable=False)
 
