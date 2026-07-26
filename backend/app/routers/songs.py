@@ -20,17 +20,16 @@ def get_song(song_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Song not found")
     return song
 
-@router.get("/{song_id}/connections", response_model=list[ConnectionResponse])
+@router.get("/{song_id}/connections", response_model=list[SongResponse])
 def get_song_connections(song_id: int, db: Session = Depends(get_db)):
     song = db.get(Song, song_id)
-    if not song:
-        raise HTTPException(status_code=404, detail="Song not found")
-    connections = db.scalars(
-        sqlalchemy.select(Connection).where(
-            (Connection.song_1_id == song_id) | (Connection.song_2_id == song_id)
-        )
-    ).all()
-    return connections
+    adjacent_songs = []
+
+    for connection in song.connections:
+        adj_song_id = connection.song_1_id if connection.song_2_id == song_id else connection.song_2_id
+        adjacent_songs.append(db.get(Song, adj_song_id))
+    
+    return adjacent_songs
 
 @router.post("/", response_model=SongResponse)
 def add_song(song: SongCreate, db: Session = Depends(get_db)):
