@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import ForeignKey, UniqueConstraint, func
 
 from .base import Base
 
@@ -17,6 +18,8 @@ class UserSongConnection(Base):
     connection_id: Mapped[int] = mapped_column(
         ForeignKey("connections.id")
         )
+
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     user = relationship(
         "User",
