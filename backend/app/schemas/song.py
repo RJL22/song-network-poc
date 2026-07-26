@@ -1,11 +1,13 @@
 from pydantic import BaseModel, ConfigDict
 
 class SongCreate(BaseModel):
+    mb_id: str
     title: str
     artist: str
 
 class SongResponse(BaseModel):
     id: int
+    mb_id: str
     title: str
     artist: str
 

@@ -34,7 +34,12 @@ def get_song_connections(song_id: int, db: Session = Depends(get_db)):
 
 @router.post("/", response_model=SongResponse)
 def add_song(song: SongCreate, db: Session = Depends(get_db)):
-    db_song = Song(title=song.title, artist=song.artist)
+    #Searching for song to see if it already exists (returns song if it does)
+    existing = db.scalars(sqlalchemy.select(Song).where(Song.mb_id == song.mb_id)).first()
+    if existing:
+        return existing
+
+    db_song = Song(mb_id=song.mb_id, title=song.title, artist=song.artist)
     db.add(db_song)
     db.commit()
     db.refresh(db_song)
