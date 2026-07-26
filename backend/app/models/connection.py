@@ -7,6 +7,7 @@ from .base import Base
 
 if TYPE_CHECKING:
     from .song import Song
+    from .user_song_connection import UserSongConnection
 
 
 class Connection(Base):
@@ -32,4 +33,8 @@ class Connection(Base):
     song_2: Mapped["Song"] = relationship(
         back_populates="connections_as_song_2",
         foreign_keys=[song_2_id],
+    )
+
+    supporters: Mapped[list["UserSongConnection"]] = relationship(
+
     )
