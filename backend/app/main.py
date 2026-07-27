@@ -7,7 +7,7 @@ from app.models import Song, Connection, UserSongConnection
 from app.database import get_db
 from app.schemas import SongCreate, SongResponse, SongUpdate
 from app.schemas import ConnectionCreate, ConnectionResponse
-from app.routers import songs, connections, song_search
+from app.routers import auth, songs, connections, song_search
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -26,6 +26,7 @@ def test():
     return {"message": "Hello World!"}
 
 # Adding the routers for songs and connections
+app.include_router(auth.router)
 app.include_router(song_search.router)
 app.include_router(songs.router)
 app.include_router(connections.router)

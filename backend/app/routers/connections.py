@@ -1,9 +1,12 @@
 import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
-from app.models import Song, Connection
+
+from app.models import Song, Connection, User
 from app.database import get_db
 from app.schemas import ConnectionCreate, ConnectionResponse
+from app.dependencies.auth import get_current_user
+from app.crud.connection import create_connection_service
 
 router = APIRouter(prefix="/connections", tags=["connections"])
 
@@ -13,28 +16,15 @@ def get_connections(db: Session = Depends(get_db)):
     return connections
 
 @router.post("/", response_model=ConnectionResponse)
-def add_connection(connection: ConnectionCreate, db: Session = Depends(get_db)):
-    # Proper ordering of song IDs to avoid duplicates
-    song_1_id = min(connection.song_1_id, connection.song_2_id)
-    song_2_id = max(connection.song_1_id, connection.song_2_id)
-
-    song1 = db.get(Song, song_1_id)
-    song2 = db.get(Song, song_2_id)
-    if not song1 or not song2:
-        raise HTTPException(status_code=404, detail="One or both songs not found")
-
-    if song_1_id == song_2_id:
-        raise HTTPException(status_code=400, detail="Cannot create a connection between the same song")
-    
-
-
-    db_connection = Connection(song_1_id=song_1_id, song_2_id=song_2_id)
-    db.add(db_connection)
+def add_connection(connection: ConnectionCreate, 
+                   current_user: User = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
     try:
-        db.commit()
-    except sqlalchemy.exc.IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=409, detail="Connection already exists")
-    db.refresh(db_connection)
-
-    return db_connection
+        return create_connection_service(
+            db,
+            user_id=current_user.id,
+            song_1_id=connection.song_1_id,
+            song_2_id=connection.song_2_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
