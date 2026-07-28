@@ -21,6 +21,8 @@ class UserSongConnection(Base):
 
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
+    points: Mapped[float] = mapped_column(server_default="0", nullable=False)
+
     user = relationship(
         "User",
         back_populates="user_song_connections"

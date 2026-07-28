@@ -11,6 +11,9 @@ Just enough to see the actual behavior and catch anything obviously wrong.
 
 import requests
 
+from app.database import SessionLocal
+from app.models import UserSongConnection
+
 BASE_URL = "http://localhost:8000"
 
 
@@ -53,6 +56,30 @@ def create_connection(token: str, song_1_id: int, song_2_id: int) -> dict:
     return resp.json()
 
 
+def get_points(connection_id: int, user_id: int) -> float:
+    db = SessionLocal()
+    try:
+        row = (
+            db.query(UserSongConnection)
+            .filter(
+                UserSongConnection.connection_id == connection_id,
+                UserSongConnection.user_id == user_id,
+            )
+            .first()
+        )
+        return row.points
+    finally:
+        db.close()
+
+
+def get_user_id(token: str) -> int:
+    # /auth/login's JWT `sub` is the user id — decode it directly rather
+    # than adding a /me endpoint just for this script.
+    import jwt  # python-jose also works: from jose import jwt
+    payload = jwt.decode(token, options={"verify_signature": False})
+    return int(payload["sub"])
+
+
 if __name__ == "__main__":
     print("--- setting up two users ---")
     token_alice = signup_and_login("alice", "password123")
@@ -77,4 +104,33 @@ if __name__ == "__main__":
     result_3 = create_connection(token_bob, song_1_id, song_2_id)
     assert result_3["id"] == result_1["id"], "Expected bob to reuse alice's connection!"
 
-    print("\n--- all checks passed ---")
+    print("\n--- all initial checks passed ---")
+
+
+
+
+    print("\n--- charlie and dana also form the same connection ---")
+    token_charlie = signup_and_login("charlie", "password123")
+    token_dana = signup_and_login("dana", "password123")
+
+    create_connection(token_charlie, song_1_id, song_2_id)
+    create_connection(token_dana, song_1_id, song_2_id)
+
+    print("\n--- checking points after 4 supporters (alice, bob, charlie, dana) ---")
+    connection_id = result_1["id"]
+    alice_id = get_user_id(token_alice)
+    bob_id = get_user_id(token_bob)
+    dana_id = get_user_id(token_dana)
+
+    alice_points = get_points(connection_id, alice_id)
+    bob_points = get_points(connection_id, bob_id)
+    dana_points = get_points(connection_id, dana_id)
+
+    print(f"alice (rank 1): {alice_points}")
+    print(f"bob (rank 2): {bob_points}")
+    print(f"dana (rank 4, most recent): {dana_points}")
+
+    assert alice_points > bob_points, "Earlier rank should score higher!"
+    assert dana_points == 0.0, "Most recent supporter should score 0 (log(N/N))!"
+
+    print("\n--- points check passed ---")

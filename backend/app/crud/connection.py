@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models import Song, Connection, UserSongConnection
+from app.crud.points import recompute_points_for_connection
 
 def create_connection_service(
     db: Session,
@@ -35,6 +36,9 @@ def create_connection_service(
     if already_supported is None:
         support = UserSongConnection(user_id=user_id, connection_id=connection.id)
         db.add(support)
+        db.flush()
+        recompute_points_for_connection(db, connection.id)
+
 
     db.commit()
     db.refresh(connection)
