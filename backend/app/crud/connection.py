@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import Song, Connection, UserSongConnection
 from app.crud.points import recompute_points_for_connection
+from app.core.exceptions import SelfConnectionError
 
 def create_connection_service(
     db: Session,
@@ -9,7 +10,7 @@ def create_connection_service(
     song_2_id: int,
 ) -> Connection:
     if song_1_id == song_2_id:
-        raise ValueError("Cannot connect a song to itself")
+        raise SelfConnectionError("Cannot connect a song to itself")
 
     s1, s2 = min(song_1_id, song_2_id), max(song_1_id, song_2_id)
 
