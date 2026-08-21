@@ -27,6 +27,7 @@ ENV/
 .coverage
 htmlcov/
 .tox/
+scripts/
 
 # --- Type checkers / linters ---
 .mypy_cache/
