@@ -19,7 +19,7 @@ The project is still a proof of concept. User profiles, friends, richer frontend
 
 - [Song search and connection architecture](docs/architecture/song-search-and-connections.md)
 - [ADR 0001: Local song cache and connection lifecycle](docs/adr/0001-local-song-cache-and-connection-lifecycle.md)
-- [Developer notes and roadmap](devREADME.md)
+- [Project status and roadmap](docs/roadmap.md)
 
 ## Running locally
 
