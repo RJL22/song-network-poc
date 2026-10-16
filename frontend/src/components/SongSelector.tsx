@@ -20,8 +20,11 @@ export function SongSelector({ selected, onSelect, onDeselect }: SongSelectorPro
   const [results, setResults] = useState<Song[]>([]);
 
   async function handleSearch() {
-    const params = new URLSearchParams({ title, artist });
-    const data = await apiFetch(`/songs/search2?${params.toString()}`);
+    if (!title.trim() && !artist.trim()) return;
+    const params = new URLSearchParams();
+    if (title.trim()) params.set("title", title.trim());
+    if (artist.trim()) params.set("artist", artist.trim());
+    const data = await apiFetch<Song[]>(`/songs/search?${params.toString()}`);
     setResults(data);
   }
 

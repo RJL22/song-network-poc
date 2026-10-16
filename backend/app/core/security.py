@@ -5,12 +5,9 @@ from passlib.context import CryptContext
 
 # In a real deployment this comes from an environment variable, never
 # hardcoded. For now, set it via os.environ or a .env file you don't commit.
-import os
+from app.core.config import settings
 
-from dotenv import load_dotenv
-load_dotenv()
-
-SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+SECRET_KEY = settings.jwt_secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # One day of access
 

@@ -17,7 +17,7 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -64,7 +64,21 @@
 
 body {
   margin: 0;
+  background: var(--bg);
 }
+
+button, input { font: inherit; }
+button { cursor: pointer; border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; background: var(--accent-bg); color: var(--text-h); }
+input { border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px; background: var(--bg); color: var(--text-h); }
+header { display: flex; justify-content: space-between; align-items: center; padding: 18px 28px; border-bottom: 1px solid var(--border); }
+nav, .row { display: flex; align-items: center; gap: 10px; }
+.brand { border: 0; background: transparent; font-weight: 700; font-size: 1.2rem; }
+main { max-width: 760px; width: calc(100% - 32px); margin: 48px auto; }
+.card { display: flex; flex-direction: column; gap: 14px; padding: 28px; border: 1px solid var(--border); border-radius: 12px; text-align: left; }
+.result { text-align: left; background: transparent; }
+.recommendation, .history { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.recommendation small, .history span { color: var(--text); }
+.error { color: #c0392b; }
 
 h1,
 h2 {

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { SongSelector, type Song } from "./SongSelector";
 import { apiFetch, ApiError } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 export function SongConnection() {
   const [songA, setSongA] = useState<Song | null>(null);
   const [songB, setSongB] = useState<Song | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   async function handleConnect() {
     if (!songA || !songB) return;
@@ -31,11 +33,12 @@ export function SongConnection() {
   return (
     <div>
       <h2>Connect two songs</h2>
+      {!isAuthenticated && <p>Log in to contribute a similarity connection.</p>}
 
       <SongSelector selected={songA} onSelect={setSongA} onDeselect={() => setSongA(null)} />
       <SongSelector selected={songB} onSelect={setSongB} onDeselect={() => setSongB(null)} />
 
-      <button onClick={handleConnect} disabled={!songA || !songB}>
+      <button onClick={handleConnect} disabled={!songA || !songB || !isAuthenticated}>
         Connect
       </button>
 

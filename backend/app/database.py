@@ -1,13 +1,10 @@
-import os
-from dotenv import load_dotenv
-
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.core.config import settings
 
 #Loading the database URL from the environment variable
 # DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./test.db")
-load_dotenv()
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = settings.database_url
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

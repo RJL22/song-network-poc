@@ -1,4 +1,7 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorized(fn : () => void) {onUnauthorized = fn;}
 
 export class ApiError extends Error {
   status: number;
@@ -9,14 +12,17 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("token");
+export async function apiFetch<T>(path: string, options: RequestInit = {}) {
   const headers = {
     "Content-Type": "application/json",
     ...options.headers,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const response = await fetch(`${BASE_URL}${path}`, { ...options, headers, credentials: "include" });
+
+  if (response.status === 401) {
+    if (onUnauthorized) onUnauthorized();
+    throw new ApiError(401, "Unauthorized");
+  }
 
   if (!response.ok) {
     let detail = `API error: ${response.status}`;
@@ -32,5 +38,6 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     throw new ApiError(response.status, detail);
   }
 
-  return response.json();
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
 }

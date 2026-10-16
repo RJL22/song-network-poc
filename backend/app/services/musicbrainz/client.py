@@ -11,14 +11,24 @@ import time
 
 import httpx
 
+
 from app.services.musicbrainz.schemas import SongSearchResult
 
 MUSICBRAINZ_BASE_URL = "https://musicbrainz.org/ws/2/recording"
 
+
 # Replace the contact with something real before this hits production use.
 USER_AGENT = "MusicGraph/0.1 (ryan@example.com)"
 
-MIN_SECONDS_BETWEEN_REQUESTS = 1.0  # MusicBrainz's unauthenticated limit
+# MusicBrainz's documented unauthenticated limit is 1 req/sec. We add a
+# safety margin above that -- in practice, going right up to the edge of
+# their limit (or bursting even slightly over it) doesn't get you a clean
+# 429/503 back. It kills the TLS connection outright and can trigger a
+# longer-lived connection-level block, well past the offending request.
+MIN_SECONDS_BETWEEN_REQUESTS = 1.3
+
+MAX_RETRIES = 3
+RETRY_BACKOFF_SECONDS = 2.0
 
 
 class MusicBrainzRateLimiter:
@@ -46,6 +56,21 @@ class MusicBrainzRateLimiter:
 
 _rate_limiter = MusicBrainzRateLimiter()
 
+# One shared, long-lived client for the whole app, created once at import
+# time rather than per-call. Previously this module opened a fresh
+# httpx.AsyncClient inside search_recordings() on every call, with
+# max_keepalive_connections=0 -- that combination forces a brand new
+# TCP+TLS handshake for every single request. Repeated fresh handshakes to
+# the same host in quick succession looks a lot more like scan/bot traffic
+# to server-side abuse detection than a browser reusing one connection
+# across requests, and is a strong suspect for why this client kept
+# tripping MusicBrainz's connection-level blocks even at low volume.
+_client = httpx.AsyncClient(
+    headers={"User-Agent": USER_AGENT},
+    limits=httpx.Limits(max_keepalive_connections=5, max_connections=5),
+    timeout=10.0,
+)
+
 
 def _build_query(title: str | None, artist: str | None) -> str:
     if not title and not artist:
@@ -67,18 +92,46 @@ async def search_recordings(
 ) -> list[SongSearchResult]:
     """Search MusicBrainz recordings by title and/or artist."""
     query = _build_query(title, artist)
+    params = {"query": query, "fmt": "json", "limit": limit}
 
-    await _rate_limiter.wait_for_turn()
+    last_error: Exception | None = None
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            MUSICBRAINZ_BASE_URL,
-            params={"query": query, "fmt": "json", "limit": limit},
-            headers={"User-Agent": USER_AGENT},
-        )
-        response.raise_for_status()
+    for attempt in range(1, MAX_RETRIES + 1):
+        await _rate_limiter.wait_for_turn()
 
-    return _parse_response(response.json())
+        try:
+            response = await _client.get(MUSICBRAINZ_BASE_URL, params=params)
+            response.raise_for_status()
+            return _parse_response(response.json())
+
+        except (httpx.ConnectError, httpx.ReadError, httpx.RemoteProtocolError) as e:
+            # These are the errors seen when MusicBrainz kills the
+            # connection outright rather than returning a clean HTTP
+            # status -- retry with backoff rather than failing immediately,
+            # since a single blip shouldn't take down a whole search.
+            last_error = e
+            if attempt < MAX_RETRIES:
+                await asyncio.sleep(RETRY_BACKOFF_SECONDS * attempt)
+                continue
+            raise
+
+        except httpx.HTTPStatusError as e:
+            # A real HTTP error response (4xx/5xx) -- 429/503 specifically
+            # mean we're being rate limited and should back off; anything
+            # else (e.g. 400 on a malformed query) isn't worth retrying.
+            if e.response.status_code in (429, 503) and attempt < MAX_RETRIES:
+                last_error = e
+                await asyncio.sleep(RETRY_BACKOFF_SECONDS * attempt)
+                continue
+            raise
+
+    # Only reachable if all retries were exhausted via the connect-error path.
+    raise last_error
+
+
+async def close_client() -> None:
+    """Call this on app shutdown to close the shared connection pool cleanly."""
+    await _client.aclose()
 
 
 def _parse_response(data: dict) -> list[SongSearchResult]:

@@ -16,3 +16,8 @@ class SongResponse(BaseModel):
 class SongUpdate(BaseModel):
     title: str
     artist: str
+
+
+class SongRecommendationResponse(SongResponse):
+    connection_id: int
+    supporter_count: int

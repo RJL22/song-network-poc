@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -36,5 +36,11 @@ class Connection(Base):
     )
 
     supporters: Mapped[list["UserSongConnection"]] = relationship(
+        "UserSongConnection",
+        back_populates="connection",
+        cascade="all, delete-orphan",
+    )
 
+    __table_args__ = (
+        UniqueConstraint("song_1_id", "song_2_id", name="uq_connections_song_pair"),
     )

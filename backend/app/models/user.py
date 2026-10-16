@@ -18,5 +18,6 @@ class User(Base):
 
     user_song_connections: Mapped[list["UserSongConnection"]] = relationship(
         "UserSongConnection",
-        back_populates="user"
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
